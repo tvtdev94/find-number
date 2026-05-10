@@ -1,11 +1,18 @@
+import { useLocation } from 'wouter'
 import { useGameStore } from '../store/game-store'
 
 export function ResultScreen() {
+  const [, setLocation] = useLocation()
   const scores = useGameStore((s) => s.scores)
   const winner = useGameStore((s) => s.matchWinner)
   const youAre = useGameStore((s) => s.youAre)
   const rematch = useGameStore((s) => s.rematch)
   const reset = useGameStore((s) => s.reset)
+
+  const handleExit = () => {
+    reset()
+    setLocation('/')
+  }
 
   const youWin = winner != null && winner === youAre
   const isDraw = winner == null
@@ -54,7 +61,7 @@ export function ResultScreen() {
             🔄 Rematch
           </button>
           <button
-            onClick={reset}
+            onClick={handleExit}
             className="flex-1 rounded-xl bg-white/10 py-3 text-base font-medium text-gray-200 ring-1 ring-white/15 transition hover:bg-white/15 active:scale-[0.98]"
           >
             Exit

@@ -87,6 +87,15 @@ export function Room({ code }: { code: string }) {
       <ReconnectModal visible={connState === 'reconnecting'} />
       {phase === 'lobby' && <Lobby roomCode={code} />}
       {phase === 'matchEnd' && <ResultScreen />}
+
+      {/* Always-visible escape hatch — sits above modal layers */}
+      <button
+        onClick={() => setLocation('/')}
+        aria-label="Back to home"
+        className="absolute left-3 top-3 z-40 flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-gray-200 ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15 active:scale-95"
+      >
+        ← Home
+      </button>
     </div>
   )
 }
