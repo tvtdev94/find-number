@@ -75,7 +75,6 @@ export function Room({ code }: { code: string }) {
         <>
           <NumberGrid
             numbers={numbers}
-            target={target}
             foundBy={foundBy}
             onClickNumber={click}
             disabled={phase !== 'playing'}

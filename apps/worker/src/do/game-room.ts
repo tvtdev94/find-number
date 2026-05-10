@@ -27,10 +27,10 @@ type AlarmKind = 'roundTimeout' | 'reconnectGrace' | 'botClick'
 
 type BotPlan = { round: number; willMiss: boolean }
 
-// Bot reaction: 1000-2000ms typical, 20% miss → fair vs average human
-const BOT_DELAY_MIN_MS = 1000
-const BOT_DELAY_MAX_MS = 2000
-const BOT_MISS_RATE = 0.2
+// Bot reaction: 1800-3500ms (now factors in scan time since grid shuffles), 25% miss
+const BOT_DELAY_MIN_MS = 1800
+const BOT_DELAY_MAX_MS = 3500
+const BOT_MISS_RATE = 0.25
 
 export class GameRoom implements DurableObject {
   private state: DurableObjectState

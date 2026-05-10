@@ -27,7 +27,6 @@ export function Practice() {
         <>
           <NumberGrid
             numbers={numbers}
-            target={target}
             foundBy={foundBy}
             onClickNumber={(n) => click(n)}
             disabled={phase !== 'playing'}

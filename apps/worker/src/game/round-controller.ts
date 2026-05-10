@@ -1,5 +1,5 @@
 import { GAME_CONFIG, type FoundEntry, type PlayerSlot } from '@find-number/shared'
-import { mulberry32 } from './layout-seed'
+import { mulberry32, shuffleSeeded } from './layout-seed'
 
 export type RoomPhase = 'lobby' | 'playing' | 'roundEnd' | 'matchEnd'
 
@@ -37,19 +37,24 @@ export function nextRound(s: RoundState, now: number): RoundState {
   if (s.round >= GAME_CONFIG.ROUNDS) {
     return { ...s, phase: 'matchEnd', target: null, roundEndsAt: null }
   }
+  const nextRoundN = s.round + 1
+  const targetRand = mulberry32(s.layoutSeed ^ (nextRoundN * 0x9e3779b1))
+  // Shuffle source pool independently so target pick + visual order don't correlate
+  const shuffleRand = mulberry32((s.layoutSeed + nextRoundN) ^ 0x85ebca6b)
   const taken = new Set(s.found.map((f) => f.number))
-  const pool = s.numbers.filter((n) => !taken.has(n))
+  const pool = ALL_NUMBERS.filter((n) => !taken.has(n))
   if (pool.length === 0) {
     return { ...s, phase: 'matchEnd', target: null, roundEndsAt: null }
   }
-  // Use a fresh PRNG seeded by layoutSeed + round so target picks are deterministic but vary per round
-  const rand = mulberry32(s.layoutSeed ^ ((s.round + 1) * 0x9e3779b1))
-  const target = pool[Math.floor(rand() * pool.length)]!
+  const target = pool[Math.floor(targetRand() * pool.length)]!
+  // Shuffle the FULL number list (not just remaining) so found tiles still appear with their colors
+  const shuffledNumbers = shuffleSeeded(ALL_NUMBERS, shuffleRand)
   return {
     ...s,
     phase: 'playing',
-    round: s.round + 1,
+    round: nextRoundN,
     target,
+    numbers: shuffledNumbers,
     roundEndsAt: now + GAME_CONFIG.ROUND_TIMEOUT_MS,
   }
 }

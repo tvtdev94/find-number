@@ -1,4 +1,4 @@
-// Mulberry32 PRNG (kept identical to web's poisson-3d.ts so seeded layouts match).
+// Mulberry32 PRNG — deterministic given seed.
 export function mulberry32(seed: number): () => number {
   let s = seed >>> 0
   return () => {
@@ -14,11 +14,14 @@ export function newLayoutSeed(): number {
   return Math.floor(Math.random() * 2 ** 31)
 }
 
-/**
- * Pick a target from `pool` using the seeded PRNG.
- * `pickIndex` advances independently of seed-derived sequence so caller can vary.
- */
-export function pickTargetSeeded(pool: number[], rand: () => number): number | null {
-  if (pool.length === 0) return null
-  return pool[Math.floor(rand() * pool.length)]!
+/** Fisher-Yates shuffle. Pure: returns new array, doesn't mutate. */
+export function shuffleSeeded<T>(arr: T[], rand: () => number): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    const tmp = a[i]!
+    a[i] = a[j]!
+    a[j] = tmp
+  }
+  return a
 }

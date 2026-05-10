@@ -13,6 +13,18 @@ const ALL_NUMBERS = Array.from(
   (_, i) => GAME_CONFIG.RANGE_MIN + i,
 )
 
+/** Fisher-Yates shuffle. Returns a new array. */
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = a[i]!
+    a[i] = a[j]!
+    a[j] = tmp
+  }
+  return a
+}
+
 export type GameMode = 'local' | 'server'
 
 type Extras = {
@@ -88,6 +100,8 @@ export const useGameStore = create<Store>((set, get) => ({
       phase: 'playing',
       round: s.round + 1,
       target,
+      // Reshuffle each round so user must scan, can't memorize positions
+      numbers: shuffleArray(ALL_NUMBERS),
       roundEndsAt: Date.now() + GAME_CONFIG.ROUND_TIMEOUT_MS,
     })
   },
