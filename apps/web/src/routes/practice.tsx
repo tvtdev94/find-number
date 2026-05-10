@@ -38,7 +38,8 @@ export function Practice() {
       {phase === 'matchEnd' && <ResultScreen />}
       <button
         onClick={() => setLocation('/')}
-        className="absolute bottom-2 left-2 z-30 rounded-lg bg-white/10 px-3 py-1.5 text-xs ring-1 ring-white/15 hover:bg-white/15"
+        className="absolute left-2 z-30 rounded-lg bg-white/10 px-3 py-1.5 text-xs ring-1 ring-white/15 hover:bg-white/15"
+        style={{ bottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
       >
         ← Home
       </button>

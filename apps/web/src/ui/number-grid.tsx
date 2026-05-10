@@ -14,7 +14,13 @@ type Props = {
  */
 export function NumberGrid({ numbers, foundBy, onClickNumber, disabled }: Props) {
   return (
-    <div className="flex h-full w-full items-center justify-center px-2 pb-6 pt-20 sm:pt-24">
+    <div
+      className="flex h-full w-full items-center justify-center px-2"
+      style={{
+        paddingTop: 'calc(max(env(safe-area-inset-top), 0px) + 5rem)',
+        paddingBottom: 'calc(max(env(safe-area-inset-bottom), 0px) + 1.5rem)',
+      }}
+    >
       <div
         className="grid w-full max-w-[640px] gap-1 sm:gap-1.5"
         style={{ gridTemplateColumns: 'repeat(10, minmax(0, 1fr))' }}

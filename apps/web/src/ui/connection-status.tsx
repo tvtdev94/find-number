@@ -12,7 +12,10 @@ const labels: Record<ConnState, { text: string; color: string }> = {
 export function ConnectionStatus({ state }: { state: ConnState }) {
   const l = labels[state]
   return (
-    <div className="pointer-events-none absolute bottom-2 right-2 z-10 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-[10px] text-gray-300 ring-1 ring-white/10 backdrop-blur">
+    <div
+      className="pointer-events-none absolute right-2 z-10 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-[10px] text-gray-300 ring-1 ring-white/10 backdrop-blur"
+      style={{ bottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
+    >
       <span className={`inline-block h-1.5 w-1.5 rounded-full ${l.color}`} />
       <span>{l.text}</span>
     </div>

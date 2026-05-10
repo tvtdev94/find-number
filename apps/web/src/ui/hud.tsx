@@ -19,7 +19,10 @@ export function HUD() {
   const remaining = TOTAL_NUMBERS - found.length
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-3 pb-6 pt-3 sm:px-5">
+    <div
+      className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-3 pb-6 sm:px-5"
+      style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}
+    >
       <div className="mx-auto flex max-w-[640px] items-center justify-between gap-2">
         <ScoreBadge slot="p1" score={scores[0]} you={youAre === 'p1'} />
 
