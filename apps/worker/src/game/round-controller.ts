@@ -1,5 +1,5 @@
 import { GAME_CONFIG, type FoundEntry, type PlayerSlot } from '@find-number/shared'
-import { mulberry32, shuffleSeeded } from './layout-seed'
+import { mulberry32, reshuffleUnclaimed, shuffleSeeded } from './layout-seed'
 
 export type RoomPhase = 'lobby' | 'playing' | 'roundEnd' | 'matchEnd'
 
@@ -32,23 +32,26 @@ export function initialRoundState(layoutSeed: number): RoundState {
   }
 }
 
-/** Pure: advance to next round; if no rounds left → matchEnd */
+/**
+ * Pure: pick the next target. Match ends only when all numbers are claimed.
+ * The grid is reshuffled but claimed-tile positions stay locked.
+ * On the very first call (s.round == 0), the full grid is shuffled from sorted.
+ */
 export function nextRound(s: RoundState, now: number): RoundState {
-  if (s.round >= GAME_CONFIG.ROUNDS) {
-    return { ...s, phase: 'matchEnd', target: null, roundEndsAt: null }
-  }
-  const nextRoundN = s.round + 1
-  const targetRand = mulberry32(s.layoutSeed ^ (nextRoundN * 0x9e3779b1))
-  // Shuffle source pool independently so target pick + visual order don't correlate
-  const shuffleRand = mulberry32((s.layoutSeed + nextRoundN) ^ 0x85ebca6b)
   const taken = new Set(s.found.map((f) => f.number))
   const pool = ALL_NUMBERS.filter((n) => !taken.has(n))
   if (pool.length === 0) {
     return { ...s, phase: 'matchEnd', target: null, roundEndsAt: null }
   }
+  const nextRoundN = s.round + 1
+  const targetRand = mulberry32(s.layoutSeed ^ (nextRoundN * 0x9e3779b1))
+  const shuffleRand = mulberry32((s.layoutSeed + nextRoundN) ^ 0x85ebca6b)
   const target = pool[Math.floor(targetRand() * pool.length)]!
-  // Shuffle the FULL number list (not just remaining) so found tiles still appear with their colors
-  const shuffledNumbers = shuffleSeeded(ALL_NUMBERS, shuffleRand)
+  // First call: full shuffle from sorted source. Subsequent: only unclaimed positions move.
+  const shuffledNumbers =
+    s.round === 0
+      ? shuffleSeeded(ALL_NUMBERS, shuffleRand)
+      : reshuffleUnclaimed(s.numbers, taken, shuffleRand)
   return {
     ...s,
     phase: 'playing',

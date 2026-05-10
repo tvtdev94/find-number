@@ -25,3 +25,30 @@ export function shuffleSeeded<T>(arr: T[], rand: () => number): T[] {
   }
   return a
 }
+
+/**
+ * Re-shuffle only unclaimed numbers; claimed stay in their existing positions.
+ * `numbers[slot]` is the value at that grid slot. `found` is the set of claimed values.
+ */
+export function reshuffleUnclaimed(
+  numbers: number[],
+  found: Set<number>,
+  rand: () => number,
+): number[] {
+  const next = [...numbers]
+  const slots: number[] = []
+  for (let i = 0; i < next.length; i++) {
+    if (!found.has(next[i]!)) slots.push(i)
+  }
+  const values = slots.map((s) => next[s]!)
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    const tmp = values[i]!
+    values[i] = values[j]!
+    values[j] = tmp
+  }
+  for (let i = 0; i < slots.length; i++) {
+    next[slots[i]!] = values[i]!
+  }
+  return next
+}

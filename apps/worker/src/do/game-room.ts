@@ -27,10 +27,13 @@ type AlarmKind = 'roundTimeout' | 'reconnectGrace' | 'botClick'
 
 type BotPlan = { round: number; willMiss: boolean }
 
-// Bot reaction: 1800-3500ms (now factors in scan time since grid shuffles), 25% miss
-const BOT_DELAY_MIN_MS = 1800
-const BOT_DELAY_MAX_MS = 3500
+// Bot reaction: 1200-2800ms scan+click. 25% miss to give human a chance.
+// Match has 100 targets so per-target pace matters more than per-target difficulty.
+const BOT_DELAY_MIN_MS = 1200
+const BOT_DELAY_MAX_MS = 2800
 const BOT_MISS_RATE = 0.25
+// Inter-target pause (after roundEnd before next roundStart)
+const INTER_ROUND_PAUSE_MS = 600
 
 export class GameRoom implements DurableObject {
   private state: DurableObjectState
@@ -221,7 +224,7 @@ export class GameRoom implements DurableObject {
             found: state.found,
           })
           // schedule next round after brief pause
-          await this.scheduleAlarm(1200, 'roundTimeout')
+          await this.scheduleAlarm(INTER_ROUND_PAUSE_MS, 'roundTimeout')
         }
         return
       }
@@ -296,7 +299,7 @@ export class GameRoom implements DurableObject {
               found: state.found,
             })
             // scheduleAlarm sets ALARM_KIND_KEY itself — don't delete after.
-            await this.scheduleAlarm(1200, 'roundTimeout')
+            await this.scheduleAlarm(INTER_ROUND_PAUSE_MS, 'roundTimeout')
             return
           }
         }

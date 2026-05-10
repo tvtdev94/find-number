@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react'
-import { GAME_CONFIG } from '@find-number/shared'
 import { useGameStore } from '../store/game-store'
+
+const INTER_TARGET_PAUSE_MS = 600
 
 /**
  * Drives round transitions in local mode:
  * - lobby → beginRound (after short delay so user sees lobby)
  * - playing: timeout via deadline check
- * - roundEnd → next round (or matchEnd handled by beginRound)
+ * - roundEnd → next target (beginRound triggers matchEnd if pool empty)
  */
 export function useLocalRoundRunner() {
   const phase = useGameStore((s) => s.phase)
@@ -21,12 +22,8 @@ export function useLocalRoundRunner() {
       const id = window.setTimeout(() => beginRound(), 600)
       return () => clearTimeout(id)
     }
-    if (phase === 'roundEnd' && round < GAME_CONFIG.ROUNDS) {
-      const id = window.setTimeout(() => beginRound(), 1200)
-      return () => clearTimeout(id)
-    }
-    if (phase === 'roundEnd' && round >= GAME_CONFIG.ROUNDS) {
-      const id = window.setTimeout(() => beginRound(), 600) // beginRound triggers matchEnd
+    if (phase === 'roundEnd') {
+      const id = window.setTimeout(() => beginRound(), INTER_TARGET_PAUSE_MS)
       return () => clearTimeout(id)
     }
     return undefined

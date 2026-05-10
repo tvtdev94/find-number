@@ -25,6 +25,26 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a
 }
 
+/** Reshuffle only unclaimed numbers; claimed stay in their grid position. */
+function reshuffleUnclaimed(numbers: number[], claimed: Set<number>): number[] {
+  const next = [...numbers]
+  const slots: number[] = []
+  for (let i = 0; i < next.length; i++) {
+    if (!claimed.has(next[i]!)) slots.push(i)
+  }
+  const values = slots.map((s) => next[s]!)
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = values[i]!
+    values[i] = values[j]!
+    values[j] = tmp
+  }
+  for (let i = 0; i < slots.length; i++) {
+    next[slots[i]!] = values[i]!
+  }
+  return next
+}
+
 export type GameMode = 'local' | 'server'
 
 type Extras = {
@@ -91,17 +111,21 @@ export const useGameStore = create<Store>((set, get) => ({
     const s = get()
     if (s.mode !== 'local') return
     const target = pickTarget(s.numbers, s.found)
-    if (target == null || s.round >= GAME_CONFIG.ROUNDS) {
+    if (target == null) {
+      // All 100 numbers found → match end
       const winner = decideMatchWinner(s.scores)
       set({ phase: 'matchEnd', matchWinner: winner, target: null, roundEndsAt: null })
       return
     }
+    const claimed = new Set(s.found.map((f) => f.number))
+    // First target → full shuffle from sorted; subsequent → only unclaimed move
+    const nextNumbers =
+      s.round === 0 ? shuffleArray(ALL_NUMBERS) : reshuffleUnclaimed(s.numbers, claimed)
     set({
       phase: 'playing',
       round: s.round + 1,
       target,
-      // Reshuffle each round so user must scan, can't memorize positions
-      numbers: shuffleArray(ALL_NUMBERS),
+      numbers: nextNumbers,
       roundEndsAt: Date.now() + GAME_CONFIG.ROUND_TIMEOUT_MS,
     })
   },
