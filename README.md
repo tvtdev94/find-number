@@ -6,6 +6,8 @@
 
 > Đua tốc độ tìm số trong vũ trụ 3D. Mở link → vào phòng → ai bấm đúng số trước thắng.
 
+🎮 **Chơi ngay:** https://find-number.pages.dev
+
 <p align="center">
   <img src="docs/images/logo.png" alt="logo" width="120" />
 </p>

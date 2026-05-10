@@ -1,7 +1,7 @@
 ---
 title: Find-Number Game (3D Multiplayer)
 date: 2026-05-10
-status: in_progress
+status: completed
 slug: find-number-game
 blockedBy: []
 blocks: []
@@ -30,7 +30,13 @@ Ship playable 1v1 number-finding 3D game on mobile web with shareable room link,
 | 06 | [Matchmaking queue](phase-06-matchmaking.md) | ✅ done | 04 |
 | 07 | [Leaderboard (week/month/year)](phase-07-leaderboard.md) | ✅ done | 04 |
 | 08 | [PWA + mobile polish + reconnect](phase-08-polish-pwa.md) | ✅ done | 05, 06, 07 |
-| 09 | [E2E tests + production deploy](phase-09-test-deploy.md) | ⚠ tests done; CF deploy blocked on workers.dev subdomain init (manual user action) | 08 |
+| 09 | [E2E tests + production deploy](phase-09-test-deploy.md) | ✅ done — Worker + Pages live, full prod stack tested | 08 |
+
+## Production URLs
+
+- Web (PWA): https://find-number.pages.dev
+- Worker API: https://find-number-worker.tvtdev94.workers.dev
+- Repo: https://github.com/tvtdev94/find-number
 
 ## Key Dependencies
 - pnpm 9+, Node 20+
