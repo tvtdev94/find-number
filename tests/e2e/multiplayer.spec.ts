@@ -11,8 +11,8 @@ test('two contexts join same room and see lobby', async ({ browser }) => {
   const url = pageA.url()
   const code = url.split('/r/')[1]!
   expect(code).toMatch(/^[A-Z0-9]{6}$/)
-  // Lobby renders with code visible
-  await expect(pageA.getByText(code)).toBeVisible()
+  // Lobby renders with code visible (use first match — code shown in title + url preview)
+  await expect(pageA.getByText(code).first()).toBeVisible()
 
   // Player B: join via link
   const ctxB = await browser.newContext()
