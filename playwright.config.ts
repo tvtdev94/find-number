@@ -18,18 +18,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: [
-    {
-      command: 'pnpm --filter @find-number/worker dev',
-      port: 8787,
-      reuseExistingServer: true,
-      timeout: 60_000,
-    },
-    {
-      command: 'pnpm --filter @find-number/web dev',
-      port: 5173,
-      reuseExistingServer: true,
-      timeout: 60_000,
-    },
-  ],
+  // Servers must be started externally (CI starts them in workflow steps;
+  // locally run `pnpm dev` first). Embedded webServer was unreliable for
+  // this workspace setup.
 })

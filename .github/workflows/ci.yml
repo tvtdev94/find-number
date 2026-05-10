@@ -54,8 +54,31 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install chromium --with-deps
 
+      - name: Apply local D1 migration
+        run: pnpm --filter @find-number/worker exec wrangler d1 migrations apply find-number-db --local
+
+      - name: Start worker
+        run: pnpm --filter @find-number/worker dev > /tmp/worker.log 2>&1 &
+
+      - name: Start web
+        run: pnpm --filter @find-number/web dev > /tmp/web.log 2>&1 &
+
+      - name: Wait for servers
+        run: |
+          npx -y wait-on http://127.0.0.1:8787/health http://127.0.0.1:5173 -t 60000
+
       - name: Run E2E
         run: pnpm exec playwright test --workers=1
+
+      - name: Upload server logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs
+          path: |
+            /tmp/worker.log
+            /tmp/web.log
+          retention-days: 3
 
       - name: Upload report
         if: failure()
