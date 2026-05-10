@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import { useSettingsStore } from '../store/settings-store'
 import { getDeviceId } from '../net/device-id'
+import { wsUrl } from '../net/api-base'
 
 type Status = 'connecting' | 'searching' | 'matched' | 'timeout' | 'error'
 
@@ -17,8 +18,7 @@ export function QuickMatchModal({ onClose }: { onClose: () => void }) {
     ;(async () => {
       const deviceId = await getDeviceId()
       if (cancelled) return
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const url = `${proto}//${window.location.host}/api/quickmatch?nickname=${encodeURIComponent(nickname)}&deviceId=${deviceId}`
+      const url = wsUrl(`/api/quickmatch?nickname=${encodeURIComponent(nickname)}&deviceId=${deviceId}`)
       const ws = new WebSocket(url)
       wsRef.current = ws
 

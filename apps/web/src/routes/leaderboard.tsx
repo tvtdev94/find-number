@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'wouter'
+import { apiUrl } from '../net/api-base'
 
 type Window = 'week' | 'month' | 'year' | 'all'
 type Row = {
@@ -29,7 +30,7 @@ export function Leaderboard() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    fetch(`/api/leaderboard?window=${tab}`)
+    fetch(apiUrl(`/api/leaderboard?window=${tab}`))
       .then((r) => r.json())
       .then((j) => setRows(j.rows ?? []))
       .catch((e) => setError(e.message))

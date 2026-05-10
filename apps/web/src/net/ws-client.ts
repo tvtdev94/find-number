@@ -1,4 +1,5 @@
 import type { ClientMsg, ServerMsg } from '@find-number/shared'
+import { wsUrl } from './api-base'
 
 export type ConnState = 'idle' | 'connecting' | 'open' | 'reconnecting' | 'closed'
 
@@ -109,8 +110,6 @@ export class GameSocket {
 }
 
 export function buildWsUrl(roomCode: string, nickname: string, deviceId: string): string {
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = window.location.host
   const params = new URLSearchParams({ nickname, deviceId })
-  return `${proto}//${host}/ws/${roomCode}?${params.toString()}`
+  return wsUrl(`/ws/${roomCode}?${params.toString()}`)
 }

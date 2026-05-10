@@ -53,6 +53,8 @@ jobs:
 
       - name: Build web
         run: pnpm --filter @find-number/web build
+        env:
+          VITE_API_BASE: https://find-number-worker.tvtdev94.workers.dev
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
