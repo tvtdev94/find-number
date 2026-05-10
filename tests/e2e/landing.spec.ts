@@ -15,6 +15,7 @@ test('practice mode start + reset', async ({ page }) => {
   // StartLobby visible
   await expect(page.getByRole('heading', { name: /Practice Mode/i })).toBeVisible()
   await page.getByRole('button', { name: /Start Match/i }).click()
-  // After start, HUD should show round counter eventually
-  await expect(page.getByText(/Round\s+1\s*\/\s*10/)).toBeVisible({ timeout: 5000 })
+  // After start, HUD shows the FIND target + remaining count
+  await expect(page.getByText(/^Find$/i)).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText(/\d+\s+left/i)).toBeVisible({ timeout: 5000 })
 })
