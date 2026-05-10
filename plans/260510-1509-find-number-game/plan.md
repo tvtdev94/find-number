@@ -1,7 +1,7 @@
 ---
 title: Find-Number Game (3D Multiplayer)
 date: 2026-05-10
-status: pending
+status: in_progress
 slug: find-number-game
 blockedBy: []
 blocks: []
@@ -22,15 +22,15 @@ Ship playable 1v1 number-finding 3D game on mobile web with shareable room link,
 
 | # | Phase | Status | Depends |
 |---|---|---|---|
-| 01 | [Setup monorepo & deploy skeleton](phase-01-setup-monorepo.md) | pending | — |
-| 02 | [3D Galaxy scene + 100 numbers](phase-02-3d-scene.md) | pending | 01 |
-| 03 | [Local game logic + scoring](phase-03-game-logic-local.md) | pending | 02 |
-| 04 | [GameRoom Durable Object + WS protocol](phase-04-backend-rooms-do.md) | pending | 01 |
-| 05 | [Multiplayer integration (frontend ↔ DO)](phase-05-multiplayer-integration.md) | pending | 03, 04 |
-| 06 | [Matchmaking queue](phase-06-matchmaking.md) | pending | 04 |
-| 07 | [Leaderboard (week/month/year)](phase-07-leaderboard.md) | pending | 04 |
-| 08 | [PWA + mobile polish + reconnect](phase-08-polish-pwa.md) | pending | 05, 06, 07 |
-| 09 | [E2E tests + production deploy](phase-09-test-deploy.md) | pending | 08 |
+| 01 | [Setup monorepo & deploy skeleton](phase-01-setup-monorepo.md) | ✅ done | — |
+| 02 | [3D Galaxy scene + 100 numbers](phase-02-3d-scene.md) | ✅ done | 01 |
+| 03 | [Local game logic + scoring](phase-03-game-logic-local.md) | ✅ done | 02 |
+| 04 | [GameRoom Durable Object + WS protocol](phase-04-backend-rooms-do.md) | ✅ done | 01 |
+| 05 | [Multiplayer integration (frontend ↔ DO)](phase-05-multiplayer-integration.md) | ✅ done | 03, 04 |
+| 06 | [Matchmaking queue](phase-06-matchmaking.md) | ✅ done | 04 |
+| 07 | [Leaderboard (week/month/year)](phase-07-leaderboard.md) | ✅ done | 04 |
+| 08 | [PWA + mobile polish + reconnect](phase-08-polish-pwa.md) | ✅ done | 05, 06, 07 |
+| 09 | [E2E tests + production deploy](phase-09-test-deploy.md) | ⚠ tests done; CF deploy blocked on workers.dev subdomain init (manual user action) | 08 |
 
 ## Key Dependencies
 - pnpm 9+, Node 20+
