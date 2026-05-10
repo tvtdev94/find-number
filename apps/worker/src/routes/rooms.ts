@@ -25,6 +25,15 @@ roomsRoute.post('/', async (c) => {
   return c.json({ ok: true, code, roomId: id.toString() })
 })
 
+// Create a room pre-filled with a bot opponent (for "Play vs bot now" UX)
+roomsRoute.post('/bot', async (c) => {
+  const code = generateRoomCode()
+  const id = c.env.GAME_ROOM.idFromName(code)
+  const stub = c.env.GAME_ROOM.get(id)
+  await stub.fetch(new Request(`https://do/init-bot?code=${code}`, { method: 'POST' }))
+  return c.json({ ok: true, code, bot: true })
+})
+
 roomsRoute.get('/:code', async (c) => {
   const code = c.req.param('code').toUpperCase()
   const id = c.env.GAME_ROOM.idFromName(code)

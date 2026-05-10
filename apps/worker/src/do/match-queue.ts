@@ -98,21 +98,34 @@ export class MatchQueue implements DurableObject {
 
   async alarm(): Promise<void> {
     const now = Date.now()
-    // Timeout stale waits
+    // Timeout stale waits → fall back to bot match (per UX: don't leave user empty-handed)
     for (const [ws, m] of this.waiting) {
       if (now - m.enqueuedAt >= QUEUE_TIMEOUT_MS) {
-        try {
-          ws.send(JSON.stringify({ t: 'timeout' }))
-          ws.close(1000, 'timeout')
-        } catch {
-          /* ignore */
-        }
+        await this.fallBackToBot(ws)
         this.waiting.delete(ws)
       }
     }
     if (this.waiting.size > 0) {
-      // re-arm alarm
       await this.state.storage.setAlarm(Date.now() + 5000)
+    }
+  }
+
+  private async fallBackToBot(ws: WebSocket): Promise<void> {
+    try {
+      const code = generateRoomCode()
+      const id = this.env.GAME_ROOM.idFromName(code)
+      const stub = this.env.GAME_ROOM.get(id)
+      await stub.fetch(new Request(`https://do/init-bot?code=${code}`, { method: 'POST' }))
+      ws.send(JSON.stringify({ t: 'bot-match', code, slot: 'p1', opponent: '🤖 Bot' }))
+      ws.close(1000, 'bot-match')
+    } catch (err) {
+      console.error('fallBackToBot failed', err)
+      try {
+        ws.send(JSON.stringify({ t: 'timeout' }))
+        ws.close()
+      } catch {
+        /* ignore */
+      }
     }
   }
 

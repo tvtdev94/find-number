@@ -37,6 +37,6 @@ test('leaderboard route loads', async ({ page }) => {
   await page.goto('/leaderboard')
   await expect(page.getByRole('heading', { name: 'Leaderboard' })).toBeVisible()
   // Tabs present
-  await expect(page.getByRole('button', { name: 'Week' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'All' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Tuần' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'All time' })).toBeVisible()
 })

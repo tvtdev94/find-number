@@ -23,7 +23,14 @@ type ConnMeta = {
 }
 
 const ALARM_KIND_KEY = 'alarmKind'
-type AlarmKind = 'roundTimeout' | 'reconnectGrace'
+type AlarmKind = 'roundTimeout' | 'reconnectGrace' | 'botClick'
+
+type BotPlan = { round: number; willMiss: boolean }
+
+// Bot reaction: 1000-2000ms typical, 20% miss → fair vs average human
+const BOT_DELAY_MIN_MS = 1000
+const BOT_DELAY_MAX_MS = 2000
+const BOT_MISS_RATE = 0.2
 
 export class GameRoom implements DurableObject {
   private state: DurableObjectState
@@ -35,6 +42,8 @@ export class GameRoom implements DurableObject {
   private ready: Set<PlayerSlot> = new Set()
   private startedAt: number = 0
   private disconnectAt: Map<PlayerSlot, number> = new Map()
+  private botSlot: PlayerSlot | null = null
+  private botPlan: BotPlan | null = null
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state
@@ -49,6 +58,27 @@ export class GameRoom implements DurableObject {
         this.players.set(meta.slot, meta)
       }
     }
+
+    // Restore bot from storage (in case DO restarted between requests)
+    this.state.blockConcurrencyWhile(async () => {
+      const stored = (await this.state.storage.get('botSlot')) as PlayerSlot | null
+      const code = (await this.state.storage.get('code')) as string | undefined
+      if (code) this.code = code
+      if (stored && !this.players.has(stored)) {
+        this.botSlot = stored
+        this.players.set(stored, {
+          slot: stored,
+          deviceId: `bot:${this.code || 'restored'}`,
+          nickname: '🤖 Bot',
+          connected: true,
+          rate: new RateLimiter(),
+        })
+        this.ready.add(stored)
+      } else if (stored) {
+        this.botSlot = stored
+        this.ready.add(stored)
+      }
+    })
   }
 
   async fetch(req: Request): Promise<Response> {
@@ -57,6 +87,24 @@ export class GameRoom implements DurableObject {
     if (url.pathname === '/init' && req.method === 'POST') {
       this.code = url.searchParams.get('code') ?? ''
       await this.state.storage.put('code', this.code)
+      return new Response('ok')
+    }
+
+    if (url.pathname === '/init-bot' && req.method === 'POST') {
+      this.code = url.searchParams.get('code') ?? ''
+      await this.state.storage.put('code', this.code)
+      // Pre-fill P2 slot as bot, auto-ready
+      const botSlot: PlayerSlot = 'p2'
+      this.botSlot = botSlot
+      await this.state.storage.put('botSlot', botSlot)
+      this.players.set(botSlot, {
+        slot: botSlot,
+        deviceId: `bot:${this.code}`,
+        nickname: '🤖 Bot',
+        connected: true,
+        rate: new RateLimiter(),
+      })
+      this.ready.add(botSlot)
       return new Response('ok')
     }
 
@@ -226,6 +274,38 @@ export class GameRoom implements DurableObject {
       }
     }
 
+    if (kind === 'botClick') {
+      const plan = this.botPlan
+      if (
+        plan &&
+        plan.round === this.round.round &&
+        this.round.phase === 'playing' &&
+        this.botSlot &&
+        this.round.target != null
+      ) {
+        if (!plan.willMiss) {
+          const { state, hit } = applyClick(this.round, this.round.target, this.botSlot)
+          if (hit) {
+            this.round = state
+            this.broadcast({
+              t: 'roundEnd',
+              round: state.round,
+              winner: this.botSlot,
+              correctNumber: this.round.target,
+              scores: state.scores,
+              found: state.found,
+            })
+            // scheduleAlarm sets ALARM_KIND_KEY itself — don't delete after.
+            await this.scheduleAlarm(1200, 'roundTimeout')
+            return
+          }
+        }
+        // Bot missed — wait for human or full round timeout
+        await this.scheduleAlarm(GAME_CONFIG.ROUND_TIMEOUT_MS, 'roundTimeout')
+        return
+      }
+    }
+
     if (kind === 'roundTimeout') {
       if (this.round.phase === 'playing') {
         this.round = timeoutRound(this.round)
@@ -240,8 +320,8 @@ export class GameRoom implements DurableObject {
       }
       this.advanceRound()
     }
-
-    await this.state.storage.delete(ALARM_KIND_KEY)
+    // Note: don't delete ALARM_KIND_KEY here — advanceRound/scheduleAlarm
+    // already set the next kind. Deleting would race with that put.
   }
 
   // ───── helpers ─────
@@ -262,10 +342,24 @@ export class GameRoom implements DurableObject {
       numbers: this.round.numbers,
       roundEndsAt: this.round.roundEndsAt!,
     })
-    void this.scheduleAlarm(GAME_CONFIG.ROUND_TIMEOUT_MS + 200, 'roundTimeout')
+
+    // If bot in room, schedule bot click instead of waiting for round timeout.
+    // Bot click handler will reschedule round timeout if it misses.
+    if (this.botSlot) {
+      this.botPlan = {
+        round: this.round.round,
+        willMiss: Math.random() < BOT_MISS_RATE,
+      }
+      const delay = BOT_DELAY_MIN_MS + Math.random() * (BOT_DELAY_MAX_MS - BOT_DELAY_MIN_MS)
+      void this.scheduleAlarm(delay, 'botClick')
+    } else {
+      void this.scheduleAlarm(GAME_CONFIG.ROUND_TIMEOUT_MS + 200, 'roundTimeout')
+    }
   }
 
   private async finishMatch(winner: PlayerSlot | null) {
+    // Don't write bot matches to D1 — keep leaderboard human-only
+    if (this.botSlot) return
     const p1 = this.players.get('p1')
     const p2 = this.players.get('p2')
     if (!p1 || !p2) return

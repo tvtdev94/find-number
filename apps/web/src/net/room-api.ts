@@ -9,6 +9,12 @@ export async function createRoom(): Promise<CreateRoomResp> {
   return r.json()
 }
 
+export async function createBotRoom(): Promise<{ code: string }> {
+  const r = await fetch(apiUrl('/api/rooms/bot'), { method: 'POST' })
+  if (!r.ok) throw new Error(`createBotRoom failed: ${r.status}`)
+  return r.json()
+}
+
 export async function getRoomStatus(code: string): Promise<RoomStatus> {
   const r = await fetch(apiUrl(`/api/rooms/${code.toUpperCase()}`))
   if (!r.ok) throw new Error(`getRoomStatus failed: ${r.status}`)
