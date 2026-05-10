@@ -179,9 +179,35 @@ export class GameRoom implements DurableObject {
     if (this.round.phase !== 'lobby') {
       this.broadcast({ t: 'opponentReconnected' }, slot)
       this.sendSnapshot(server, slot)
+      // The webSocketClose handler scheduled a reconnectGrace alarm that
+      // overwrote any pending botClick/roundTimeout. Re-arm the appropriate
+      // game alarm so play continues after a transient drop.
+      await this.rearmGameAlarm()
     }
     this.broadcastLobby()
     return new Response(null, { status: 101, webSocket: client })
+  }
+
+  /** Restore the game alarm chain after a reconnect interrupted it. */
+  private async rearmGameAlarm(): Promise<void> {
+    if (this.round.phase === 'playing' && this.round.target != null) {
+      if (this.botSlot) {
+        this.botPlan = {
+          round: this.round.round,
+          willMiss: Math.random() < BOT_MISS_RATE,
+        }
+        const delay =
+          BOT_DELAY_MIN_MS + Math.random() * (BOT_DELAY_MAX_MS - BOT_DELAY_MIN_MS)
+        await this.scheduleAlarm(delay, 'botClick')
+        return
+      }
+      const remaining = Math.max(2000, (this.round.roundEndsAt ?? 0) - Date.now())
+      await this.scheduleAlarm(remaining, 'roundTimeout')
+      return
+    }
+    if (this.round.phase === 'roundEnd') {
+      await this.scheduleAlarm(INTER_ROUND_PAUSE_MS, 'roundTimeout')
+    }
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {

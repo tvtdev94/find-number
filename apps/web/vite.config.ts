@@ -27,6 +27,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallbackDenylist: [/^\/api\//, /^\/ws\//, /^\/health/],
+        // New SW activates immediately on next page load (no waiting)
+        // so users get game logic fixes without manual cache clear.
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],
