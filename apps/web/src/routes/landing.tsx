@@ -53,7 +53,7 @@ export function Landing() {
     <div className="flex h-full items-center justify-center p-4">
       <div className="w-[min(94vw,420px)] rounded-2xl bg-gray-900/90 p-6 ring-1 ring-white/10">
         <h1 className="mb-1 text-center text-3xl font-black">Find Number</h1>
-        <p className="mb-5 text-center text-sm text-gray-400">1v1 · 3D · race the target</p>
+        <p className="mb-5 text-center text-sm text-gray-400">1v1 · race to find the number</p>
 
         <label className="mb-1 block text-xs uppercase tracking-widest text-gray-400">
           Nickname

@@ -1,9 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useLocation } from 'wouter'
-import { GalaxyScene } from '../scenes/galaxy-scene'
-import { TargetBanner } from '../ui/target-banner'
+import { NumberGrid } from '../ui/number-grid'
 import { HUD } from '../ui/hud'
-import { FoundList } from '../ui/found-list'
 import { ResultScreen } from '../ui/result-screen'
 import { StartLobby } from '../ui/start-lobby'
 import { useGameStore } from '../store/game-store'
@@ -13,45 +11,35 @@ import { foundToMap } from '../game/scoring'
 export function Practice() {
   const [, setLocation] = useLocation()
   const phase = useGameStore((s) => s.phase)
-  const mode = useGameStore((s) => s.mode)
   const numbers = useGameStore((s) => s.numbers)
-  const layoutSeed = useGameStore((s) => s.layoutSeed)
   const target = useGameStore((s) => s.target)
   const found = useGameStore((s) => s.found)
-  const round = useGameStore((s) => s.round)
   const click = useGameStore((s) => s.clickNumber)
-
-  // Bounce to landing if user navigated here without starting
-  useEffect(() => {
-    if (mode !== 'local' || phase === 'idle') {
-      // allow idle so StartLobby shows
-    }
-  }, [mode, phase, setLocation])
 
   useLocalRoundRunner()
   const foundBy = useMemo(() => foundToMap(found), [found])
 
+  const inGame = phase === 'playing' || phase === 'roundEnd' || phase === 'lobby'
+
   return (
-    <div className="relative h-full w-full">
-      <GalaxyScene
-        numbers={numbers}
-        layoutSeed={layoutSeed}
-        target={target}
-        foundBy={foundBy}
-        onClickNumber={(n) => click(n)}
-      />
-      {phase !== 'idle' && phase !== 'matchEnd' && (
+    <div className="relative h-full w-full bg-gray-950">
+      {inGame && (
         <>
-          <TargetBanner target={target} round={round} totalRounds={10} />
+          <NumberGrid
+            numbers={numbers}
+            target={target}
+            foundBy={foundBy}
+            onClickNumber={(n) => click(n)}
+            disabled={phase !== 'playing'}
+          />
           <HUD />
-          <FoundList />
         </>
       )}
       {phase === 'idle' && <StartLobby />}
       {phase === 'matchEnd' && <ResultScreen />}
       <button
         onClick={() => setLocation('/')}
-        className="absolute bottom-3 left-3 z-30 rounded-lg bg-white/10 px-3 py-2 text-xs ring-1 ring-white/15 hover:bg-white/15"
+        className="absolute bottom-2 left-2 z-30 rounded-lg bg-white/10 px-3 py-1.5 text-xs ring-1 ring-white/15 hover:bg-white/15"
       >
         ← Home
       </button>

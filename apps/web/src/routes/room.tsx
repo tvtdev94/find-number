@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
-import { GalaxyScene } from '../scenes/galaxy-scene'
-import { TargetBanner } from '../ui/target-banner'
+import { NumberGrid } from '../ui/number-grid'
 import { HUD } from '../ui/hud'
-import { FoundList } from '../ui/found-list'
 import { ResultScreen } from '../ui/result-screen'
 import { Lobby } from '../ui/lobby'
 import { ConnectionStatus } from '../ui/connection-status'
@@ -24,17 +22,14 @@ export function Room({ code }: { code: string }) {
 
   const phase = useGameStore((s) => s.phase)
   const numbers = useGameStore((s) => s.numbers)
-  const layoutSeed = useGameStore((s) => s.layoutSeed)
   const target = useGameStore((s) => s.target)
   const found = useGameStore((s) => s.found)
-  const round = useGameStore((s) => s.round)
   const click = useGameStore((s) => s.clickNumber)
   const opponentLeft = useGameStore((s) => s.opponentLeft)
 
   const [connState, setConnState] = useState<ConnState>('idle')
   const sockRef = useRef<GameSocket | null>(null)
 
-  // No nickname → bounce to landing
   useEffect(() => {
     if (nickname.trim().length < 2) {
       setLocation('/')
@@ -72,32 +67,25 @@ export function Room({ code }: { code: string }) {
 
   const foundBy = useMemo(() => foundToMap(found), [found])
 
+  const inGame = phase === 'playing' || phase === 'roundEnd'
+
   return (
-    <div className="relative h-full w-full">
-      <GalaxyScene
-        numbers={numbers}
-        layoutSeed={layoutSeed}
-        target={target}
-        foundBy={foundBy}
-        onClickNumber={click}
-      />
+    <div className="relative h-full w-full bg-gray-950">
+      {inGame && (
+        <>
+          <NumberGrid
+            numbers={numbers}
+            target={target}
+            foundBy={foundBy}
+            onClickNumber={click}
+            disabled={phase !== 'playing'}
+          />
+          <HUD />
+        </>
+      )}
       <ConnectionStatus state={connState} />
       <OpponentLeftBanner visible={opponentLeft && phase !== 'matchEnd'} />
       <ReconnectModal visible={connState === 'reconnecting'} />
-      {phase === 'playing' && (
-        <>
-          <TargetBanner target={target} round={round} totalRounds={10} />
-          <HUD />
-          <FoundList />
-        </>
-      )}
-      {phase === 'roundEnd' && (
-        <>
-          <TargetBanner target={null} round={round} totalRounds={10} />
-          <HUD />
-          <FoundList />
-        </>
-      )}
       {phase === 'lobby' && <Lobby roomCode={code} />}
       {phase === 'matchEnd' && <ResultScreen />}
     </div>
