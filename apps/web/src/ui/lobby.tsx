@@ -8,50 +8,66 @@ export function Lobby({ roomCode }: { roomCode: string }) {
   const [copied, setCopied] = useState(false)
 
   const youReady = players.find((p) => p.slot === youAre)?.ready ?? false
+  const opponent = players.find((p) => p.slot !== youAre)
   const link = `${window.location.origin}/r/${roomCode}`
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link)
       setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      setTimeout(() => setCopied(false), 1800)
     } catch {
       /* ignore */
     }
   }
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur">
-      <div className="w-[min(94vw,420px)] rounded-2xl bg-gray-900/90 p-6 ring-1 ring-white/10">
-        <div className="mb-3 text-center">
-          <div className="text-xs uppercase tracking-widest text-gray-400">Room Code</div>
-          <div className="text-3xl font-black tabular-nums tracking-widest text-yellow-300">
-            {roomCode}
-          </div>
-        </div>
-        <div className="mb-5 grid grid-cols-2 gap-2">
-          <PlayerSlot slot="p1" players={players} youAre={youAre} />
-          <PlayerSlot slot="p2" players={players} youAre={youAre} />
-        </div>
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-950/90 p-4 backdrop-blur">
+      <div className="w-[min(94vw,440px)] rounded-3xl border border-white/10 bg-gray-900/90 p-6 shadow-2xl">
+        {/* room code with copy */}
         <button
           onClick={copy}
-          className="mb-2 w-full rounded-lg bg-white/10 px-3 py-2 text-sm text-gray-200 ring-1 ring-white/15 hover:bg-white/15"
+          className="group mb-5 flex w-full flex-col items-center rounded-2xl bg-yellow-400/10 px-4 py-4 ring-1 ring-yellow-400/30 transition hover:bg-yellow-400/15 active:scale-[0.99]"
+          aria-label="Copy room code and link"
         >
-          {copied ? 'Copied!' : 'Copy invite link'}
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-yellow-300/80">
+            Room Code · tap to copy
+          </div>
+          <div className="font-mono text-4xl font-black tracking-[0.3em] text-yellow-300">
+            {roomCode}
+          </div>
+          <div className="mt-1 text-xs text-gray-400 transition group-hover:text-gray-200">
+            {copied ? '✓ Đã copy link!' : link.replace(/^https?:\/\//, '')}
+          </div>
         </button>
-        <button
-          onClick={setReady}
-          disabled={youReady}
-          className="w-full rounded-xl bg-yellow-400 py-3 text-lg font-bold text-gray-900 hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-400"
-        >
-          {youReady ? 'Waiting for opponent…' : 'Ready'}
-        </button>
+
+        {/* player slots */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <PlayerCard slot="p1" players={players} youAre={youAre} />
+          <PlayerCard slot="p2" players={players} youAre={youAre} />
+        </div>
+
+        {/* status / CTA */}
+        {!opponent ? (
+          <div className="flex items-center justify-center gap-3 rounded-xl bg-white/5 px-3 py-3 text-sm text-gray-300 ring-1 ring-white/10">
+            <div className="h-3 w-3 animate-pulse rounded-full bg-yellow-400" />
+            Đang chờ đối thủ vào phòng…
+          </div>
+        ) : (
+          <button
+            onClick={setReady}
+            disabled={youReady}
+            className="w-full rounded-xl bg-gradient-to-r from-yellow-400 to-amber-400 py-3.5 text-lg font-bold text-gray-900 shadow-lg shadow-yellow-400/30 transition active:scale-[0.98] disabled:bg-gray-700 disabled:bg-none disabled:text-gray-400 disabled:shadow-none"
+          >
+            {youReady ? '⏳ Đang chờ đối thủ ready…' : '✓ Sẵn sàng!'}
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
-function PlayerSlot({
+function PlayerCard({
   slot,
   players,
   youAre,
@@ -61,23 +77,32 @@ function PlayerSlot({
   youAre: 'p1' | 'p2' | null
 }) {
   const p = players.find((x) => x.slot === slot)
-  const color = slot === 'p1' ? 'border-red-500/50 text-red-300' : 'border-blue-500/50 text-blue-300'
+  const isP1 = slot === 'p1'
+  const ringColor = isP1 ? 'ring-red-500/50' : 'ring-blue-500/50'
+  const textColor = isP1 ? 'text-red-300' : 'text-blue-300'
+  const bgColor = isP1 ? 'bg-red-500/10' : 'bg-blue-500/10'
+  const initials = p ? p.nickname.slice(0, 2).toUpperCase() : '?'
+
   return (
-    <div className={`rounded-lg border-2 ${color} p-3 text-center`}>
-      <div className="text-[10px] uppercase tracking-widest opacity-70">
-        {slot.toUpperCase()} {youAre === slot && '(you)'}
+    <div className={`rounded-2xl ${bgColor} p-3 ring-1 ${ringColor}`}>
+      <div className="mb-2 flex items-center justify-between">
+        <div className={`text-[10px] font-semibold uppercase tracking-widest ${textColor}`}>
+          {slot.toUpperCase()}{youAre === slot && <span className="ml-1 opacity-60">(you)</span>}
+        </div>
+        {p?.ready && <span className="text-xs text-green-400">✓</span>}
       </div>
-      <div className="text-base font-semibold text-gray-100">{p?.nickname ?? 'waiting…'}</div>
-      <div className="mt-1 text-xs">
-        {p ? (
-          p.ready ? (
-            <span className="text-green-400">ready</span>
-          ) : (
-            <span className="text-gray-400">not ready</span>
-          )
-        ) : (
-          <span className="text-gray-500">empty</span>
-        )}
+      <div className="flex items-center gap-2.5">
+        <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${textColor} bg-black/30`}>
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-gray-100">
+            {p?.nickname ?? '—'}
+          </div>
+          <div className="text-[11px] text-gray-400">
+            {p ? (p.ready ? 'ready' : 'chưa sẵn sàng') : 'trống'}
+          </div>
+        </div>
       </div>
     </div>
   )

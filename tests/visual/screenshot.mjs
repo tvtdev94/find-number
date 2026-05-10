@@ -25,11 +25,11 @@ const page = await ctx.newPage()
 
 // 1. Landing
 await page.goto('http://127.0.0.1:5173/')
-await page.getByPlaceholder('Enter your name').fill('Tester')
+await page.getByPlaceholder('Tên của bạn').fill('Tester')
 for (const v of Object.values(VIEWPORTS)) await shot(page, 'landing', v)
 
 // 2. Practice — playing state
-await page.getByRole('button', { name: /Practice offline/i }).click()
+await page.getByRole('button', { name: /^Practice$/i }).click()
 await page.waitForURL('**/practice')
 await page.waitForTimeout(300)
 await page.getByRole('button', { name: 'Start Match' }).click()
@@ -54,7 +54,7 @@ for (const v of Object.values(VIEWPORTS)) await shot(page, 'leaderboard', v)
 const ctxLobby = await browser.newContext()
 const pageLobby = await ctxLobby.newPage()
 await pageLobby.goto('http://127.0.0.1:5173/')
-await pageLobby.getByPlaceholder('Enter your name').fill('Alice')
+await pageLobby.getByPlaceholder('Tên của bạn').fill('Alice')
 await pageLobby.getByRole('button', { name: /Create Room/i }).click()
 await pageLobby.waitForURL(/\/r\/[A-Z0-9]{6}/, { timeout: 8000 })
 await pageLobby.waitForTimeout(800)

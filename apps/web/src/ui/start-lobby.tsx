@@ -7,25 +7,44 @@ export function StartLobby() {
   const setAlternate = useSettingsStore((s) => s.setAlternateSlots)
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur">
-      <div className="w-[min(92vw,360px)] rounded-2xl bg-gray-900/90 p-6 text-center ring-1 ring-white/10">
-        <h1 className="mb-1 text-3xl font-black tracking-tight">Find Number</h1>
-        <p className="mb-5 text-sm text-gray-400">
-          Local practice — multiplayer in next phase
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-950/90 p-4 backdrop-blur">
+      <div className="w-[min(94vw,400px)] rounded-3xl border border-white/10 bg-gray-900/90 p-6 shadow-2xl">
+        <div className="mb-3 flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-400/15 text-3xl ring-1 ring-yellow-400/30">
+            🎯
+          </div>
+        </div>
+        <h1 className="text-center text-2xl font-black">Practice Mode</h1>
+        <p className="mb-5 mt-1 text-center text-sm text-gray-400">
+          Chơi offline — luyện phản xạ
         </p>
-        <label className="mb-5 flex items-center justify-center gap-2 text-sm text-gray-300">
+
+        <div className="mb-5 rounded-xl bg-white/5 px-3 py-3 ring-1 ring-white/10">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+            Cách chơi
+          </div>
+          <ul className="space-y-1 text-sm text-gray-300">
+            <li>• Banner trên cùng hiện <span className="text-yellow-300 font-semibold">số mục tiêu</span></li>
+            <li>• Tap đúng quả số đó → ghi điểm</li>
+            <li>• 10 vòng, ai cao điểm hơn thắng</li>
+          </ul>
+        </div>
+
+        <label className="mb-5 flex items-center justify-between rounded-xl bg-white/5 px-3 py-2.5 ring-1 ring-white/10">
+          <span className="text-sm text-gray-200">Luân phiên P1/P2</span>
           <input
             type="checkbox"
             checked={alternate}
             onChange={(e) => setAlternate(e.target.checked)}
+            className="h-4 w-4 accent-yellow-400"
           />
-          Alternate P1/P2 (visual test)
         </label>
+
         <button
           onClick={() => startMatch({ alternateSlots: alternate })}
-          className="w-full rounded-xl bg-yellow-400 py-3 text-lg font-bold text-gray-900 hover:bg-yellow-300"
+          className="w-full rounded-xl bg-gradient-to-r from-yellow-400 to-amber-400 py-3.5 text-lg font-bold text-gray-900 shadow-lg shadow-yellow-400/30 transition active:scale-[0.98]"
         >
-          Start Match
+          ▶ Start Match
         </button>
       </div>
     </div>

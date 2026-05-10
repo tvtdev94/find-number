@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'wouter'
 import { useSettingsStore } from '../store/settings-store'
-import { useGameStore } from '../store/game-store'
 import { createRoom } from '../net/room-api'
 import { QuickMatchModal } from '../ui/quick-match-modal'
 
@@ -9,7 +8,6 @@ export function Landing() {
   const [, setLocation] = useLocation()
   const nickname = useSettingsStore((s) => s.nickname)
   const setNickname = useSettingsStore((s) => s.setNickname)
-  // startMatch handled by Practice page now
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +16,7 @@ export function Landing() {
   const ensureNick = (): string | null => {
     const n = nickname.trim()
     if (n.length < 2) {
-      setError('Nickname needs at least 2 characters')
+      setError('Nickname cần ≥ 2 ký tự')
       return null
     }
     return n
@@ -40,7 +38,7 @@ export function Landing() {
   const handleJoin = () => {
     if (!ensureNick()) return
     const c = code.trim().toUpperCase()
-    if (c.length === 0) return setError('Enter a room code')
+    if (c.length === 0) return setError('Nhập room code')
     setLocation(`/r/${c}`)
   }
 
@@ -50,36 +48,57 @@ export function Landing() {
   }
 
   return (
-    <div className="flex h-full items-center justify-center p-4">
-      <div className="w-[min(94vw,420px)] rounded-2xl bg-gray-900/90 p-6 ring-1 ring-white/10">
-        <h1 className="mb-1 text-center text-3xl font-black">Find Number</h1>
-        <p className="mb-5 text-center text-sm text-gray-400">1v1 · race to find the number</p>
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-gray-950 p-4">
+      {/* ambient gradient orbs */}
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-60">
+        <div className="absolute -left-20 top-10 h-64 w-64 rounded-full bg-red-500/20 blur-3xl" />
+        <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="absolute left-1/2 top-1/3 h-40 w-40 -translate-x-1/2 rounded-full bg-yellow-400/15 blur-3xl" />
+      </div>
 
-        <label className="mb-1 block text-xs uppercase tracking-widest text-gray-400">
+      <div className="w-[min(94vw,420px)] rounded-3xl border border-white/10 bg-gray-900/80 p-6 shadow-2xl backdrop-blur-xl">
+        {/* hero VS */}
+        <div className="mb-3 flex items-center justify-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 text-lg font-black text-red-400 ring-2 ring-red-500/40">
+            P1
+          </div>
+          <div className="text-2xl font-black text-yellow-300">VS</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20 text-lg font-black text-blue-400 ring-2 ring-blue-500/40">
+            P2
+          </div>
+        </div>
+
+        <h1 className="text-center text-3xl font-black tracking-tight">Find Number</h1>
+        <p className="mb-6 text-center text-sm text-gray-400">
+          Đua tốc độ — ai bấm số đúng trước thắng
+        </p>
+
+        <label htmlFor="nick" className="mb-1 block text-[11px] font-semibold uppercase tracking-widest text-gray-400">
           Nickname
         </label>
         <input
+          id="nick"
           value={nickname}
           onChange={(e) => setNickname(e.target.value.slice(0, 20))}
-          placeholder="Enter your name"
-          className="mb-4 w-full rounded-lg bg-white/5 px-3 py-2 text-base ring-1 ring-white/15 focus:outline-none focus:ring-yellow-400"
+          placeholder="Tên của bạn"
+          maxLength={20}
+          autoComplete="nickname"
+          className="mb-5 w-full rounded-xl bg-white/5 px-4 py-3 text-base ring-1 ring-white/15 transition focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-yellow-400"
         />
 
         <button
           disabled={busy}
           onClick={handleCreate}
-          className="mb-2 w-full rounded-xl bg-yellow-400 py-3 text-lg font-bold text-gray-900 hover:bg-yellow-300 disabled:opacity-60"
+          className="mb-2 w-full rounded-xl bg-gradient-to-r from-yellow-400 to-amber-400 py-3.5 text-lg font-bold text-gray-900 shadow-lg shadow-yellow-400/30 transition hover:shadow-yellow-400/50 active:scale-[0.98] disabled:opacity-60"
         >
-          {busy ? 'Creating…' : 'Create Room'}
+          {busy ? 'Đang tạo phòng…' : '⚡ Create Room'}
         </button>
 
         <button
-          onClick={() => {
-            if (ensureNick()) setShowQuick(true)
-          }}
-          className="mb-2 w-full rounded-xl bg-white/10 py-3 text-base font-semibold text-gray-100 ring-1 ring-white/15 hover:bg-white/15"
+          onClick={() => ensureNick() && setShowQuick(true)}
+          className="mb-3 w-full rounded-xl bg-white/10 py-3 text-base font-semibold text-gray-100 ring-1 ring-white/15 transition hover:bg-white/15 active:scale-[0.98]"
         >
-          Quick Match
+          🎯 Quick Match
         </button>
 
         <div className="mb-2 flex gap-2">
@@ -87,32 +106,38 @@ export function Landing() {
             value={code}
             onChange={(e) => setCode(e.target.value.slice(0, 6).toUpperCase())}
             placeholder="ROOM CODE"
-            className="flex-1 rounded-lg bg-white/5 px-3 py-2 text-center text-base tracking-widest ring-1 ring-white/15 focus:outline-none focus:ring-yellow-400"
+            maxLength={6}
+            className="flex-1 rounded-xl bg-white/5 px-3 py-2.5 text-center text-base font-mono tracking-widest ring-1 ring-white/15 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <button
             onClick={handleJoin}
-            className="rounded-lg bg-white/10 px-4 text-sm font-semibold text-gray-200 ring-1 ring-white/15 hover:bg-white/15"
+            className="rounded-xl bg-white/10 px-5 text-sm font-semibold text-gray-100 ring-1 ring-white/15 transition hover:bg-white/15 active:scale-[0.98]"
           >
             Join
           </button>
         </div>
 
-        <div className="mt-3 flex gap-3">
+        <div className="mt-4 flex items-center justify-center gap-1 text-xs">
           <button
             onClick={handlePractice}
-            className="flex-1 rounded-lg bg-transparent py-2 text-sm text-gray-400 underline-offset-4 hover:text-gray-200 hover:underline"
+            className="rounded-md px-3 py-1.5 text-gray-400 transition hover:text-gray-100 hover:underline underline-offset-4"
           >
-            Practice offline
+            Practice
           </button>
+          <span className="text-gray-700">·</span>
           <button
             onClick={() => setLocation('/leaderboard')}
-            className="flex-1 rounded-lg bg-transparent py-2 text-sm text-gray-400 underline-offset-4 hover:text-gray-200 hover:underline"
+            className="rounded-md px-3 py-1.5 text-gray-400 transition hover:text-gray-100 hover:underline underline-offset-4"
           >
             Leaderboard
           </button>
         </div>
 
-        {error && <div className="mt-3 text-center text-sm text-red-400">{error}</div>}
+        {error && (
+          <div role="alert" className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-center text-sm text-red-300 ring-1 ring-red-500/30">
+            {error}
+          </div>
+        )}
       </div>
       {showQuick && <QuickMatchModal onClose={() => setShowQuick(false)} />}
     </div>
