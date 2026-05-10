@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useLocation } from 'wouter'
 import { useGameStore } from '../store/game-store'
 
@@ -13,6 +14,52 @@ export function ResultScreen() {
     reset()
     setLocation('/')
   }
+
+  // Celebrate: confetti when local user wins (or any winner in practice mode)
+  const shouldCelebrate = winner != null && (youAre == null || winner === youAre)
+  useEffect(() => {
+    if (!shouldCelebrate) return
+    let cancelled = false
+    void (async () => {
+      const { default: confetti } = await import('canvas-confetti')
+      if (cancelled) return
+      // Fireworks: 3 staggered bursts from different origins
+      const bursts: Array<{ origin: { x: number; y: number }; delay: number }> = [
+        { origin: { x: 0.5, y: 0.55 }, delay: 0 },
+        { origin: { x: 0.2, y: 0.6 }, delay: 250 },
+        { origin: { x: 0.8, y: 0.6 }, delay: 500 },
+      ]
+      for (const b of bursts) {
+        setTimeout(() => {
+          if (cancelled) return
+          confetti({
+            particleCount: 90,
+            spread: 80,
+            startVelocity: 50,
+            origin: b.origin,
+            colors: ['#fde047', '#ef4444', '#3b82f6', '#22c55e', '#f97316', '#a855f7'],
+            scalar: 1.1,
+            ticks: 220,
+          })
+        }, b.delay)
+      }
+      // Final big burst
+      setTimeout(() => {
+        if (cancelled) return
+        confetti({
+          particleCount: 160,
+          spread: 120,
+          startVelocity: 60,
+          origin: { x: 0.5, y: 0.45 },
+          colors: ['#fde047', '#ef4444', '#3b82f6'],
+          scalar: 1.3,
+        })
+      }, 900)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [shouldCelebrate])
 
   const youWin = winner != null && winner === youAre
   const isDraw = winner == null
