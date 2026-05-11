@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import {
+  DEFAULT_MATCH_MODE,
   GAME_CONFIG,
+  MATCH_MODES,
+  type MatchMode,
   type Player,
   type PlayerSlot,
   type ServerMsg,
@@ -8,10 +11,10 @@ import {
 import type { LocalGameState } from '../game/types'
 import { applyHit, decideMatchWinner, pickTarget } from '../game/scoring'
 
-const ALL_NUMBERS = Array.from(
-  { length: GAME_CONFIG.RANGE_MAX - GAME_CONFIG.RANGE_MIN + 1 },
-  (_, i) => GAME_CONFIG.RANGE_MIN + i,
-)
+/** Generate [1..size] number pool. */
+function numbersForSize(size: number): number[] {
+  return Array.from({ length: size }, (_, i) => GAME_CONFIG.RANGE_MIN + i)
+}
 
 /** Fisher-Yates shuffle. Returns a new array. */
 function shuffleArray<T>(arr: T[]): T[] {
@@ -57,7 +60,7 @@ type Extras = {
 }
 
 type Actions = {
-  startMatch: (opts?: { alternateSlots?: boolean }) => void
+  startMatch: (opts?: { alternateSlots?: boolean; matchMode?: MatchMode }) => void
   beginRound: () => void
   clickNumber: (n: number, by?: PlayerSlot) => void
   endRoundOnTimeout: () => void
@@ -72,16 +75,21 @@ type Actions = {
 
 type Store = LocalGameState & Extras & Actions
 
+const defaultPreset = MATCH_MODES[DEFAULT_MATCH_MODE]
+
 const baseState: LocalGameState & Extras = {
   phase: 'idle',
   round: 0,
   target: null,
   layoutSeed: 1,
-  numbers: ALL_NUMBERS,
+  numbers: numbersForSize(defaultPreset.size),
   scores: [0, 0],
   found: [],
   roundEndsAt: null,
   matchWinner: null,
+  matchMode: DEFAULT_MATCH_MODE,
+  matchSize: defaultPreset.size,
+  cols: defaultPreset.cols,
   alternateSlots: true,
   nextSlot: 'p1',
   mode: 'local',
@@ -98,29 +106,35 @@ export const useGameStore = create<Store>((set, get) => ({
   reset: () => set({ ...baseState, mode: get().mode }),
 
   // ───── LOCAL MODE ─────
-  startMatch: (opts) =>
+  startMatch: (opts) => {
+    const matchMode = opts?.matchMode ?? DEFAULT_MATCH_MODE
+    const preset = MATCH_MODES[matchMode]
     set(() => ({
       ...baseState,
       mode: 'local',
       phase: 'lobby',
       layoutSeed: Math.floor(Math.random() * 2 ** 31),
       alternateSlots: opts?.alternateSlots ?? true,
-    })),
+      matchMode,
+      matchSize: preset.size,
+      cols: preset.cols,
+      numbers: numbersForSize(preset.size),
+    }))
+  },
 
   beginRound: () => {
     const s = get()
     if (s.mode !== 'local') return
     const target = pickTarget(s.numbers, s.found)
     if (target == null) {
-      // All 100 numbers found → match end
       const winner = decideMatchWinner(s.scores)
       set({ phase: 'matchEnd', matchWinner: winner, target: null, roundEndsAt: null })
       return
     }
     const claimed = new Set(s.found.map((f) => f.number))
-    // First target → full shuffle from sorted; subsequent → only unclaimed move
+    const sortedPool = numbersForSize(s.matchSize)
     const nextNumbers =
-      s.round === 0 ? shuffleArray(ALL_NUMBERS) : reshuffleUnclaimed(s.numbers, claimed)
+      s.round === 0 ? shuffleArray(sortedPool) : reshuffleUnclaimed(s.numbers, claimed)
     set({
       phase: 'playing',
       round: s.round + 1,
@@ -142,12 +156,17 @@ export const useGameStore = create<Store>((set, get) => ({
       s.send?.({ t: 'rematch' })
       return
     }
+    const preset = MATCH_MODES[s.matchMode]
     set({
       ...baseState,
       mode: 'local',
       phase: 'lobby',
       layoutSeed: s.layoutSeed,
       alternateSlots: s.alternateSlots,
+      matchMode: s.matchMode,
+      matchSize: preset.size,
+      cols: preset.cols,
+      numbers: numbersForSize(preset.size),
     })
   },
 
@@ -223,20 +242,28 @@ export const useGameStore = create<Store>((set, get) => ({
       case 'opponentReconnected':
         set({ opponentLeft: false })
         return
-      case 'snapshot':
+      case 'snapshot': {
+        // Back-compat: older server may omit these fields → default to classic
+        const matchSize = msg.matchSize ?? MATCH_MODES.classic.size
+        const cols = msg.cols ?? MATCH_MODES.classic.cols
+        const matchMode = msg.mode ?? DEFAULT_MATCH_MODE
         set({
           phase: msg.phase === 'matchEnd' ? 'matchEnd' : msg.phase === 'lobby' ? 'lobby' : 'playing',
           round: msg.round,
           target: msg.target,
           layoutSeed: msg.layoutSeed ?? get().layoutSeed,
-          numbers: msg.numbers.length > 0 ? msg.numbers : ALL_NUMBERS,
+          numbers: msg.numbers.length > 0 ? msg.numbers : numbersForSize(matchSize),
           scores: msg.scores,
           found: msg.found,
           players: msg.players,
           youAre: msg.youAre,
           roundEndsAt: msg.roundEndsAt,
+          matchMode,
+          matchSize,
+          cols,
         })
         return
+      }
       default:
         return
     }

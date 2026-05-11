@@ -3,16 +3,20 @@ import type { PlayerSlot } from '@find-number/shared'
 type Props = {
   numbers: number[]
   foundBy: Record<number, PlayerSlot>
+  cols: number
   onClickNumber: (n: number) => void
   disabled?: boolean
 }
 
 /**
- * 10x10 grid of number tiles. Numbers are rendered in the order received
- * from server / store (re-shuffled each round so player must scan visually).
- * No target highlight — the player has to find the number themselves.
+ * Variable-size grid of number tiles. Numbers are rendered in the order
+ * received from server / store (re-shuffled each round so player must scan visually).
+ * `cols` drives layout — sprint=5, quick=5, classic=10.
  */
-export function NumberGrid({ numbers, foundBy, onClickNumber, disabled }: Props) {
+export function NumberGrid({ numbers, foundBy, cols, onClickNumber, disabled }: Props) {
+  // Wider tiles on small grids → cap max-width to keep them readable but not huge.
+  const maxWidth = cols <= 5 ? 420 : cols <= 7 ? 520 : 640
+
   return (
     <div
       className="flex h-full w-full items-center justify-center px-2"
@@ -22,8 +26,11 @@ export function NumberGrid({ numbers, foundBy, onClickNumber, disabled }: Props)
       }}
     >
       <div
-        className="grid w-full max-w-[640px] gap-1 sm:gap-1.5"
-        style={{ gridTemplateColumns: 'repeat(10, minmax(0, 1fr))' }}
+        className="grid w-full gap-1 sm:gap-1.5"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          maxWidth: `${maxWidth}px`,
+        }}
       >
         {numbers.map((n) => {
           const owner = foundBy[n]

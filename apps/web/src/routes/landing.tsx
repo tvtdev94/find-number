@@ -3,11 +3,14 @@ import { useLocation } from 'wouter'
 import { useSettingsStore } from '../store/settings-store'
 import { createRoom } from '../net/room-api'
 import { QuickMatchModal } from '../ui/quick-match-modal'
+import { ModeSelector } from '../ui/mode-selector'
 
 export function Landing() {
   const [, setLocation] = useLocation()
   const nickname = useSettingsStore((s) => s.nickname)
   const setNickname = useSettingsStore((s) => s.setNickname)
+  const createRoomMode = useSettingsStore((s) => s.createRoomMode)
+  const setCreateRoomMode = useSettingsStore((s) => s.setCreateRoomMode)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +30,7 @@ export function Landing() {
     setBusy(true)
     setError(null)
     try {
-      const r = await createRoom()
+      const r = await createRoom(createRoomMode)
       setLocation(`/r/${r.code}`)
     } catch (e) {
       setError((e as Error).message)
@@ -83,7 +86,16 @@ export function Landing() {
           placeholder="Tên của bạn"
           maxLength={20}
           autoComplete="nickname"
-          className="mb-5 w-full rounded-xl bg-white/5 px-4 py-3 text-base ring-1 ring-white/15 transition focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          className="mb-4 w-full rounded-xl bg-white/5 px-4 py-3 text-base ring-1 ring-white/15 transition focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        />
+
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+          Độ dài trận
+        </label>
+        <ModeSelector
+          value={createRoomMode}
+          onChange={setCreateRoomMode}
+          className="mb-4"
         />
 
         <button

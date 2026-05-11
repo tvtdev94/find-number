@@ -1,7 +1,16 @@
-import { GAME_CONFIG, type ClientMsg, type Player, type PlayerSlot, type ServerMsg } from '@find-number/shared'
+import {
+  DEFAULT_MATCH_MODE,
+  GAME_CONFIG,
+  MATCH_MODES,
+  isMatchMode,
+  type ClientMsg,
+  type MatchMode,
+  type Player,
+  type PlayerSlot,
+  type ServerMsg,
+} from '@find-number/shared'
 import type { Env } from '../env'
 import {
-  ALL_NUMBERS,
   applyClick,
   decideMatchWinner,
   initialRoundState,
@@ -28,7 +37,7 @@ type AlarmKind = 'roundTimeout' | 'reconnectGrace' | 'botClick'
 type BotPlan = { round: number; willMiss: boolean }
 
 // Bot reaction: 1200-2800ms scan+click. 25% miss to give human a chance.
-// Match has 100 targets so per-target pace matters more than per-target difficulty.
+// Match pool varies by mode (25/50/100) — per-target pace matters more than per-target difficulty.
 const BOT_DELAY_MIN_MS = 1200
 const BOT_DELAY_MAX_MS = 2800
 const BOT_MISS_RATE = 0.25
@@ -39,6 +48,7 @@ export class GameRoom implements DurableObject {
   private state: DurableObjectState
   private env: Env
   private code: string = ''
+  private mode: MatchMode = DEFAULT_MATCH_MODE
   private round: RoundState
   private players: Map<PlayerSlot, ConnMeta> = new Map()
   private sockets: Map<WebSocket, PlayerSlot> = new Map()
@@ -51,7 +61,7 @@ export class GameRoom implements DurableObject {
   constructor(state: DurableObjectState, env: Env) {
     this.state = state
     this.env = env
-    this.round = initialRoundState(newLayoutSeed())
+    this.round = initialRoundState(newLayoutSeed(), DEFAULT_MATCH_MODE)
 
     // Restore hibernated WS sessions
     for (const ws of this.state.getWebSockets()) {
@@ -62,11 +72,19 @@ export class GameRoom implements DurableObject {
       }
     }
 
-    // Restore bot from storage (in case DO restarted between requests)
+    // Restore bot + mode from storage (in case DO restarted between requests)
     this.state.blockConcurrencyWhile(async () => {
       const stored = (await this.state.storage.get('botSlot')) as PlayerSlot | null
       const code = (await this.state.storage.get('code')) as string | undefined
+      const storedMode = (await this.state.storage.get('mode')) as MatchMode | undefined
       if (code) this.code = code
+      if (storedMode && isMatchMode(storedMode) && storedMode !== this.mode) {
+        this.mode = storedMode
+        // Re-init round state for the persisted mode (only matters if still in lobby)
+        if (this.round.phase === 'lobby') {
+          this.round = initialRoundState(this.round.layoutSeed, this.mode)
+        }
+      }
       if (stored && !this.players.has(stored)) {
         this.botSlot = stored
         this.players.set(stored, {
@@ -90,12 +108,14 @@ export class GameRoom implements DurableObject {
     if (url.pathname === '/init' && req.method === 'POST') {
       this.code = url.searchParams.get('code') ?? ''
       await this.state.storage.put('code', this.code)
+      await this.applyMode(url.searchParams.get('mode'))
       return new Response('ok')
     }
 
     if (url.pathname === '/init-bot' && req.method === 'POST') {
       this.code = url.searchParams.get('code') ?? ''
       await this.state.storage.put('code', this.code)
+      await this.applyMode(url.searchParams.get('mode'))
       // Pre-fill P2 slot as bot, auto-ready
       const botSlot: PlayerSlot = 'p2'
       this.botSlot = botSlot
@@ -257,7 +277,7 @@ export class GameRoom implements DurableObject {
       case 'rematch': {
         this.ready.add(slot)
         if (this.players.size === 2 && this.ready.size === 2) {
-          this.round = initialRoundState(newLayoutSeed())
+          this.round = initialRoundState(newLayoutSeed(), this.mode)
           this.ready.clear()
           this.startedAt = Date.now()
           this.advanceRound()
@@ -294,8 +314,12 @@ export class GameRoom implements DurableObject {
           // Award win to the other slot if mid-match
           if (this.round.phase === 'playing' || this.round.phase === 'roundEnd') {
             const other: PlayerSlot = slot === 'p1' ? 'p2' : 'p1'
+            // Forfeit: award full pool to the remaining player
+            const forfeitWin = this.round.matchSize
             const finalScores: [number, number] =
-              other === 'p1' ? [GAME_CONFIG.ROUNDS, this.round.scores[1]] : [this.round.scores[0], GAME_CONFIG.ROUNDS]
+              other === 'p1'
+                ? [forfeitWin, this.round.scores[1]]
+                : [this.round.scores[0], forfeitWin]
             this.round = { ...this.round, phase: 'matchEnd', scores: finalScores }
             await this.finishMatch(other)
           }
@@ -473,6 +497,25 @@ export class GameRoom implements DurableObject {
       players,
       youAre: slot,
       roundEndsAt: this.round.roundEndsAt,
+      matchSize: this.round.matchSize,
+      cols: this.round.cols,
+      mode: this.mode,
     })
+  }
+
+  /**
+   * Update mode from query param, persist, and re-init round if still in lobby.
+   * Called only during /init or /init-bot — these are one-shot endpoints fired
+   * before any player joins, so we never re-init mid-match. Guard kept for safety.
+   */
+  private async applyMode(raw: string | null): Promise<void> {
+    if (!raw) return
+    if (!isMatchMode(raw)) return
+    if (raw === this.mode) return
+    this.mode = raw
+    await this.state.storage.put('mode', raw)
+    if (this.round.phase === 'lobby') {
+      this.round = initialRoundState(this.round.layoutSeed, this.mode)
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { GAME_CONFIG } from '@find-number/shared'
+import { DEFAULT_MATCH_MODE, GAME_CONFIG, isMatchMode, type MatchMode } from '@find-number/shared'
 import type { Env } from '../env'
 
 export const roomsRoute = new Hono<{ Bindings: Env }>()
@@ -16,22 +16,33 @@ function generateRoomCode(): string {
   return code
 }
 
+async function readMode(c: { req: { json: () => Promise<unknown> } }): Promise<MatchMode> {
+  try {
+    const body = (await c.req.json()) as { mode?: unknown } | null
+    if (body && isMatchMode(body.mode)) return body.mode
+  } catch {
+    /* no body / not JSON */
+  }
+  return DEFAULT_MATCH_MODE
+}
+
 roomsRoute.post('/', async (c) => {
+  const mode = await readMode(c)
   const code = generateRoomCode()
   const id = c.env.GAME_ROOM.idFromName(code)
   const stub = c.env.GAME_ROOM.get(id)
-  // Initialize the DO
-  await stub.fetch(new Request(`https://do/init?code=${code}`, { method: 'POST' }))
-  return c.json({ ok: true, code, roomId: id.toString() })
+  await stub.fetch(new Request(`https://do/init?code=${code}&mode=${mode}`, { method: 'POST' }))
+  return c.json({ ok: true, code, mode, roomId: id.toString() })
 })
 
 // Create a room pre-filled with a bot opponent (for "Play vs bot now" UX)
 roomsRoute.post('/bot', async (c) => {
+  const mode = await readMode(c)
   const code = generateRoomCode()
   const id = c.env.GAME_ROOM.idFromName(code)
   const stub = c.env.GAME_ROOM.get(id)
-  await stub.fetch(new Request(`https://do/init-bot?code=${code}`, { method: 'POST' }))
-  return c.json({ ok: true, code, bot: true })
+  await stub.fetch(new Request(`https://do/init-bot?code=${code}&mode=${mode}`, { method: 'POST' }))
+  return c.json({ ok: true, code, mode, bot: true })
 })
 
 roomsRoute.get('/:code', async (c) => {

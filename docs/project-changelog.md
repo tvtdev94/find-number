@@ -26,7 +26,37 @@
 
 ---
 
+## v0.2.0 (2026-05-11) — Match-Length Modes
+
+### Added
+- **3 match presets** (configurable game length): `sprint` (25, 5×5, ~1min), `quick` (50, 5×10, ~2-3min), `classic` (100, 10×10, ~5-8min)
+- `MATCH_MODES`, `MatchMode`, `DEFAULT_MATCH_MODE`, `QUICK_MATCH_MODE`, `isMatchMode()` in `@find-number/shared`
+- `ModeSelector` component — 3-button segmented picker with size + duration hint (tap area ≥44px, ARIA radiogroup)
+- Mode pickers in Landing (Create Room) and Practice (StartLobby)
+- Persisted user preferences: `practiceMode`, `createRoomMode` in settings-store
+- 8 new worker tests covering all 3 modes (sprint target-range, matchEnd at variable size)
+
+### Changed
+- Grid layout now adapts: cols driven by `cols` from snapshot; max-width scales (5col=420px, 7col=520px, 10col=640px)
+- HUD `remaining` uses `store.matchSize` instead of hard-coded 100
+- Round controller parameterized by mode; `initialRoundState(seed, mode='classic')`
+- Forfeit award fixed: winner gets full pool size (`matchSize`) instead of legacy `GAME_CONFIG.ROUNDS=10`
+- Quick Match queue locked to `quick` mode (50) — avoid fragmenting matchmaking
+- Bot fallback rooms inherit `quick` mode
+- `createRoom(mode?)` and `createBotRoom(mode?)` accept optional mode body
+
+### Protocol
+- `ServerMsg.snapshot` extended with optional `matchSize`, `cols`, `mode` (graceful degradation; clients default to classic if absent)
+
+### Technical Notes
+- Bundle delta: +1 KB gzip JS, +0.07 KB gzip CSS — under +2 KB budget
+- Tests: 23/23 worker, 8/8 web
+- DO `mode` persisted to storage; restored on cold start in `blockConcurrencyWhile`
+- Backward compatible: existing rooms without mode → classic; pre-deploy clients receive defaults
+
+---
+
 ## Unreleased (Next Phase)
 
-- Mobile UI refactor: component refinement, adaptive sizing
-- Animation enhancements: game state transitions
+- Mobile UI refactor: in-game tile memoization, target-reveal animation (phase 2 of UI plan)
+- Per-mode leaderboard segmentation (deferred from match-modes feature)

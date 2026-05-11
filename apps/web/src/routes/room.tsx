@@ -24,6 +24,7 @@ export function Room({ code }: { code: string }) {
   const numbers = useGameStore((s) => s.numbers)
   const target = useGameStore((s) => s.target)
   const found = useGameStore((s) => s.found)
+  const cols = useGameStore((s) => s.cols)
   const click = useGameStore((s) => s.clickNumber)
   const opponentLeft = useGameStore((s) => s.opponentLeft)
 
@@ -76,6 +77,7 @@ export function Room({ code }: { code: string }) {
           <NumberGrid
             numbers={numbers}
             foundBy={foundBy}
+            cols={cols}
             onClickNumber={click}
             disabled={phase !== 'playing'}
           />

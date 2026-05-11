@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
+import { QUICK_MATCH_MODE } from '@find-number/shared'
 import { useSettingsStore } from '../store/settings-store'
 import { getDeviceId } from '../net/device-id'
 import { wsUrl } from '../net/api-base'
@@ -75,7 +76,7 @@ export function QuickMatchModal({ onClose }: { onClose: () => void }) {
         try { wsRef.current.send(JSON.stringify({ t: 'cancel' })) } catch {}
         wsRef.current.close()
       }
-      const r = await createBotRoom()
+      const r = await createBotRoom(QUICK_MATCH_MODE)
       setStatus('bot')
       setLocation(`/r/${r.code}`)
     } catch (e) {

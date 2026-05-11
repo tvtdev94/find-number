@@ -1,3 +1,4 @@
+import { QUICK_MATCH_MODE } from '@find-number/shared'
 import type { Env } from '../env'
 
 type WaitingMeta = {
@@ -115,7 +116,9 @@ export class MatchQueue implements DurableObject {
       const code = generateRoomCode()
       const id = this.env.GAME_ROOM.idFromName(code)
       const stub = this.env.GAME_ROOM.get(id)
-      await stub.fetch(new Request(`https://do/init-bot?code=${code}`, { method: 'POST' }))
+      await stub.fetch(
+        new Request(`https://do/init-bot?code=${code}&mode=${QUICK_MATCH_MODE}`, { method: 'POST' }),
+      )
       ws.send(JSON.stringify({ t: 'bot-match', code, slot: 'p1', opponent: '🤖 Bot' }))
       ws.close(1000, 'bot-match')
     } catch (err) {
@@ -142,7 +145,9 @@ export class MatchQueue implements DurableObject {
       const id = this.env.GAME_ROOM.idFromName(code)
       const stub = this.env.GAME_ROOM.get(id)
       try {
-        await stub.fetch(new Request(`https://do/init?code=${code}`, { method: 'POST' }))
+        await stub.fetch(
+          new Request(`https://do/init?code=${code}&mode=${QUICK_MATCH_MODE}`, { method: 'POST' }),
+        )
       } catch (err) {
         console.error('match-queue init room failed', err)
         return

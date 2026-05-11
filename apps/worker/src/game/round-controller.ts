@@ -1,4 +1,4 @@
-import { GAME_CONFIG, type FoundEntry, type PlayerSlot } from '@find-number/shared'
+import { GAME_CONFIG, MATCH_MODES, type FoundEntry, type MatchMode, type PlayerSlot } from '@find-number/shared'
 import { mulberry32, reshuffleUnclaimed, shuffleSeeded } from './layout-seed'
 
 export type RoomPhase = 'lobby' | 'playing' | 'roundEnd' | 'matchEnd'
@@ -12,23 +12,28 @@ export type RoundState = {
   scores: [number, number]
   found: FoundEntry[]
   roundEndsAt: number | null
+  matchSize: number
+  cols: number
 }
 
-export const ALL_NUMBERS = Array.from(
-  { length: GAME_CONFIG.RANGE_MAX - GAME_CONFIG.RANGE_MIN + 1 },
-  (_, i) => GAME_CONFIG.RANGE_MIN + i,
-)
+/** Generate [1..size] number pool. */
+export function numbersForSize(size: number): number[] {
+  return Array.from({ length: size }, (_, i) => GAME_CONFIG.RANGE_MIN + i)
+}
 
-export function initialRoundState(layoutSeed: number): RoundState {
+export function initialRoundState(layoutSeed: number, mode: MatchMode = 'classic'): RoundState {
+  const m = MATCH_MODES[mode]
   return {
     phase: 'lobby',
     round: 0,
     target: null,
     layoutSeed,
-    numbers: ALL_NUMBERS,
+    numbers: numbersForSize(m.size),
     scores: [0, 0],
     found: [],
     roundEndsAt: null,
+    matchSize: m.size,
+    cols: m.cols,
   }
 }
 
@@ -38,19 +43,20 @@ export function initialRoundState(layoutSeed: number): RoundState {
  * On the very first call (s.round == 0), the full grid is shuffled from sorted.
  */
 export function nextRound(s: RoundState, now: number): RoundState {
+  const pool = numbersForSize(s.matchSize)
   const taken = new Set(s.found.map((f) => f.number))
-  const pool = ALL_NUMBERS.filter((n) => !taken.has(n))
-  if (pool.length === 0) {
+  const available = pool.filter((n) => !taken.has(n))
+  if (available.length === 0) {
     return { ...s, phase: 'matchEnd', target: null, roundEndsAt: null }
   }
   const nextRoundN = s.round + 1
   const targetRand = mulberry32(s.layoutSeed ^ (nextRoundN * 0x9e3779b1))
   const shuffleRand = mulberry32((s.layoutSeed + nextRoundN) ^ 0x85ebca6b)
-  const target = pool[Math.floor(targetRand() * pool.length)]!
+  const target = available[Math.floor(targetRand() * available.length)]!
   // First call: full shuffle from sorted source. Subsequent: only unclaimed positions move.
   const shuffledNumbers =
     s.round === 0
-      ? shuffleSeeded(ALL_NUMBERS, shuffleRand)
+      ? shuffleSeeded(pool, shuffleRand)
       : reshuffleUnclaimed(s.numbers, taken, shuffleRand)
   return {
     ...s,

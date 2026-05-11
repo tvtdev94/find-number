@@ -14,6 +14,7 @@ export function Practice() {
   const numbers = useGameStore((s) => s.numbers)
   const target = useGameStore((s) => s.target)
   const found = useGameStore((s) => s.found)
+  const cols = useGameStore((s) => s.cols)
   const click = useGameStore((s) => s.clickNumber)
 
   useLocalRoundRunner()
@@ -28,6 +29,7 @@ export function Practice() {
           <NumberGrid
             numbers={numbers}
             foundBy={foundBy}
+            cols={cols}
             onClickNumber={(n) => click(n)}
             disabled={phase !== 'playing'}
           />

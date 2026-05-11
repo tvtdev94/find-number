@@ -1,4 +1,4 @@
-import type { Player, FoundEntry, PlayerSlot } from './index'
+import type { Player, FoundEntry, PlayerSlot, MatchMode } from './index'
 
 export type ClientMsg =
   | { t: 'join'; roomCode: string; nickname: string; deviceId: string }
@@ -42,4 +42,9 @@ export type ServerMsg =
       players: Player[]
       youAre: PlayerSlot
       roundEndsAt: number | null
+      // Match-length mode (added 2026-05). Optional for graceful degradation
+      // when a new client connects to a pre-deploy server. Defaults: classic.
+      matchSize?: number
+      cols?: number
+      mode?: MatchMode
     }

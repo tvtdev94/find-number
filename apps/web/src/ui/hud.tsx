@@ -1,12 +1,9 @@
-import { GAME_CONFIG } from '@find-number/shared'
 import { useGameStore } from '../store/game-store'
-
-const TOTAL_NUMBERS = GAME_CONFIG.RANGE_MAX - GAME_CONFIG.RANGE_MIN + 1
 
 /**
  * Single-row top HUD:
  *   [P1 score] -- [FIND target + N left] -- [P2 score]
- * Match runs until all 100 numbers are claimed.
+ * Match runs until all numbers in the pool are claimed (pool size = matchSize).
  */
 export function HUD() {
   const scores = useGameStore((s) => s.scores)
@@ -14,9 +11,10 @@ export function HUD() {
   const target = useGameStore((s) => s.target)
   const found = useGameStore((s) => s.found)
   const youAre = useGameStore((s) => s.youAre)
+  const matchSize = useGameStore((s) => s.matchSize)
 
   const showTarget = phase === 'playing' && target != null
-  const remaining = TOTAL_NUMBERS - found.length
+  const remaining = Math.max(0, matchSize - found.length)
 
   return (
     <div
