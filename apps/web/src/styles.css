@@ -1,3 +1,97 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    font-feature-settings: 'tnum';
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-surface-base text-gray-100 antialiased;
+    font-family: theme('fontFamily.display');
+    overscroll-behavior: none;
+  }
+  *,
+  *::before,
+  *::after {
+    touch-action: manipulation;
+  }
+  button {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+}
+
+@layer components {
+  /* Surfaces */
+  .fn-card {
+    @apply rounded-3xl border border-white/10 bg-surface-raised/90 shadow-2xl backdrop-blur-xl;
+  }
+  .fn-card-elev {
+    @apply rounded-2xl border border-white/10 bg-surface-elev/80;
+  }
+
+  /* Modal scaffolding (shared across all modal screens) */
+  .fn-modal-backdrop {
+    @apply absolute inset-0 flex items-center justify-center bg-surface-base/90 p-4 backdrop-blur;
+  }
+  .fn-modal-panel {
+    @apply w-[min(94vw,420px)] rounded-3xl border border-white/10 bg-surface-raised/95 p-6 shadow-2xl animate-stagger-in;
+  }
+
+  /* Buttons — tap area ≥ 44px (py-3.5 = 14px → 24px font line + 28px padding = 52px) */
+  .fn-btn-primary {
+    @apply w-full rounded-xl bg-gradient-to-r from-neon-yellow to-amber-400 py-3.5 text-lg font-bold text-gray-900 shadow-glow-yellow-md transition active:scale-[0.98] disabled:opacity-60 disabled:shadow-none;
+    min-height: 48px;
+  }
+  .fn-btn-primary:not(:disabled):hover {
+    @apply shadow-glow-yellow-lg;
+  }
+  .fn-btn-ghost {
+    @apply w-full rounded-xl bg-white/10 py-3 text-base font-semibold text-gray-100 ring-1 ring-white/15 transition hover:bg-white/15 active:scale-[0.98] disabled:opacity-60;
+    min-height: 44px;
+  }
+  .fn-btn-danger {
+    @apply w-full rounded-xl bg-red-500/90 py-3 text-base font-semibold text-white ring-1 ring-red-400/40 transition hover:bg-red-500 active:scale-[0.98];
+    min-height: 44px;
+  }
+
+  /* Game tile — base utility (Phase 2 will compose on top) */
+  .fn-tile {
+    @apply relative aspect-square w-full rounded-lg flex items-center justify-center font-bold tabular-nums text-base sm:text-lg select-none transition-transform ring-1;
+    min-height: 36px; /* phase 2 expands hit-area with invisible wrapper to ≥44px */
+  }
+
+  /* Neon text helpers */
+  .fn-glow-text-yellow {
+    color: theme('colors.neon.yellow');
+    text-shadow: 0 0 10px rgba(253, 224, 71, 0.6);
+  }
+  .fn-glow-text-red {
+    color: theme('colors.neon.red');
+    text-shadow: 0 0 10px rgba(255, 59, 84, 0.55);
+  }
+  .fn-glow-text-blue {
+    color: theme('colors.neon.blue');
+    text-shadow: 0 0 10px rgba(62, 160, 255, 0.55);
+  }
+
+  /* Section labels */
+  .fn-label {
+    @apply text-[10px] font-semibold uppercase tracking-widest text-gray-400;
+  }
+}
+
+@layer utilities {
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 0.75rem);
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+}
